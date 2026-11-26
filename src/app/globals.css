@@ -1,0 +1,252 @@
+@import "tailwindcss";
+
+/* Class-based dark mode: `<html class="dark">` is set by the theme script. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ------------------------------------------------------------------ */
+/* Design tokens (HSL channels so they work with opacity modifiers).   */
+/* Change colours here only — components use the semantic names.       */
+/* ------------------------------------------------------------------ */
+:root {
+  --background: 0 0% 100%;
+  --foreground: 0 0% 3.9%;
+  --muted: 0 0% 96.1%;
+  --muted-foreground: 0 0% 45.1%;
+  --border: 0 0% 89.8%;
+  --card: 0 0% 98.5%;
+  --signal: 78 92% 60%;
+  --signal-foreground: 80 45% 8%;
+  /* Readable lime for text on light backgrounds */
+  --signal-text: 82 80% 26%;
+  --success: 142 71% 45%;
+
+  --ease-snap: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dark {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --border: 240 3.7% 15.9%;
+  --card: 240 6% 6.5%;
+  --signal-text: 78 92% 60%;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-border: hsl(var(--border));
+  --color-card: hsl(var(--card));
+  --color-signal: hsl(var(--signal));
+  --color-signal-foreground: hsl(var(--signal-foreground));
+  --color-signal-text: hsl(var(--signal-text));
+  --color-success: hsl(var(--success));
+
+  --font-sans: var(--font-geist), Inter, system-ui, sans-serif;
+  --font-display: var(--font-bricolage), var(--font-geist), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+
+  --ease-snap: var(--ease-snap);
+
+  --animate-marquee: marquee 40s linear infinite;
+  --animate-progress: progress var(--progress-duration, 6s) linear both;
+  --animate-fade-in: fade-in 0.6s var(--ease-snap) both;
+  --animate-chat-in: chat-in 0.45s var(--ease-snap) both;
+  --animate-bubble-in: bubble-in 0.4s var(--ease-snap) both;
+}
+
+/* Chat popup grows out of the launcher in the bottom-right corner */
+@keyframes chat-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.95);
+  }
+}
+
+@keyframes bubble-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+}
+
+/* "Typing…" dots */
+@keyframes typing {
+  0%,
+  60%,
+  100% {
+    transform: none;
+    opacity: 0.45;
+  }
+  30% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Used by autoplaying tabs: the bar fills, then onAnimationEnd advances. */
+@keyframes progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Base                                                                */
+/* ------------------------------------------------------------------ */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 6rem;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-background font-sans text-foreground;
+  }
+
+  ::selection {
+    @apply bg-signal text-signal-foreground;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-4 outline-foreground;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Highlighter marker behind a word (parish-style)                     */
+/* ------------------------------------------------------------------ */
+@utility marker {
+  position: relative;
+  isolation: isolate;
+  white-space: nowrap;
+
+  &::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: 0.52em -0.08em 0.02em;
+    background: hsl(var(--signal));
+    border-radius: 0.12em;
+    transform-origin: left center;
+    transform: skewX(-6deg);
+  }
+
+  &:where(.dark, .dark *) {
+    color: hsl(var(--signal-foreground));
+  }
+
+  &:where(.dark, .dark *)::before {
+    inset: 0.06em -0.1em -0.02em;
+  }
+}
+
+/* On lime panels (e.g. the closing CTA) the highlighter flips to dark ink with lime text */
+[data-surface="signal"] .marker {
+  color: hsl(var(--signal));
+}
+
+[data-surface="signal"] .marker::before {
+  inset: 0.06em -0.1em -0.02em;
+  background: hsl(var(--signal-foreground));
+}
+
+/* Fade the edges of a horizontally scrolling strip */
+@utility mask-fade-x {
+  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+}
+
+/* ------------------------------------------------------------------ */
+/* Scroll animations. Only active when JS runs (`.js` is set by the    */
+/* theme script), so content is never hidden if scripts fail.          */
+/* ------------------------------------------------------------------ */
+.js [data-reveal] {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.9s var(--ease-snap),
+    transform 0.9s var(--ease-snap);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+.js [data-reveal][data-visible] {
+  opacity: 1;
+  transform: none;
+}
+
+/* The highlighter draws in from left to right */
+.js .marker::before {
+  transform: skewX(-6deg) scaleX(0);
+  transition: transform 0.9s var(--ease-snap) 0.35s;
+}
+
+.js .marker[data-visible]::before {
+  transform: skewX(-6deg) scaleX(1);
+}
+
+/* In dark mode the marked word is dark text; keep it readable until the mark lands */
+.js.dark .marker:not([data-visible]) {
+  color: hsl(var(--foreground) / 0.35);
+}
+
+.dark .marker {
+  transition: color 0.4s ease 0.55s;
+}
+
+.js [data-surface="signal"] .marker:not([data-visible]) {
+  color: hsl(var(--signal-foreground));
+}
+
+/* Lenis handles smooth scrolling itself; native smooth scroll would fight it */
+html.lenis {
+  scroll-behavior: auto;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
